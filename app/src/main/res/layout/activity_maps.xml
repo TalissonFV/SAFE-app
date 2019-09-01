@@ -34,4 +34,14 @@
         android:text="REGISTRAR OCORRÊNCIA"
         android:textColor="#ffffff" />
 
+    <Button
+        android:id="@+id/btnLogout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="310dp"
+        android:layout_marginEnd="13dp"
+        android:text="Logout" />
+
 </RelativeLayout>
