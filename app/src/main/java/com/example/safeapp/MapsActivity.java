@@ -1,5 +1,7 @@
 package com.example.safeapp;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
@@ -7,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 
@@ -17,6 +20,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -24,12 +28,13 @@ import com.google.firebase.auth.FirebaseUser;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private FusedLocationProviderClient client;
     Button registerEvent;
     Button logout;
+    Menu menu;
 
     FirebaseAuth firebaseAuth;
     FirebaseUser firebaseUser;
@@ -44,8 +49,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
         registerEvent = findViewById(R.id.btnRegisterEvent);
         logout = findViewById(R.id.btnLogout);
+
+        setSupportActionBar(toolbar);
+
 
         client = LocationServices.getFusedLocationProviderClient(this);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -53,23 +64,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        registerEvent.setOnClickListener(new View.OnClickListener() {
+        if (ActivityCompat.checkSelfPermission(MapsActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        client.getLastLocation().addOnSuccessListener(MapsActivity.this, new OnSuccessListener<Location>() {
             @Override
-            public void onClick(View v) {
-                if (ActivityCompat.checkSelfPermission(MapsActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    return;
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                    mMap.addMarker(new MarkerOptions().position(currentLocation).title("Ocorrência").snippet("Registrada"));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+
                 }
-                client.getLastLocation().addOnSuccessListener(MapsActivity.this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        if (location != null) {
-                            LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-                            mMap.addMarker(new MarkerOptions().position(currentLocation).title("Marker in current place"));
-                            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
-                            mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
-                        }
-                    }
-                });
             }
         });
 
@@ -84,6 +91,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 finish();
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.drawer_menu, menu);
+        return true;
     }
 
     @Override
