@@ -20,6 +20,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -29,6 +31,7 @@ import java.util.Map;
 public class RegisterActivity extends AppCompatActivity {
 
     EditText email;
+    EditText name;
     EditText password;
     EditText passwordConfirmation;
     EditText CPF;
@@ -41,6 +44,7 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+        name = findViewById(R.id.etName);
         email = findViewById(R.id.etEmail);
         password = findViewById(R.id.etPassword);
         passwordConfirmation = findViewById(R.id.etConfirmPassword);
@@ -84,14 +88,28 @@ public class RegisterActivity extends AppCompatActivity {
                 .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        progressBar.setVisibility(View.GONE);
-                        if (task.isSuccessful()) {
-                            storeUser();
-                            Toast.makeText(RegisterActivity.this, "Usuário registrado com sucesso!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(RegisterActivity.this, MapsActivity.class));
-                            finish();
-                        } else {
-                            Toast.makeText(RegisterActivity.this, "Erro ao registrar usuário", Toast.LENGTH_SHORT).show();
+                        if(task.isSuccessful()) {
+                            progressBar.setVisibility(View.GONE);
+
+                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                    .setDisplayName(name.getText().toString()).build();
+
+                            user.updateProfile(profileUpdates)
+                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            if (task.isSuccessful()) {
+                                                storeUser();
+                                                Toast.makeText(RegisterActivity.this, "Usuário registrado com sucesso!", Toast.LENGTH_SHORT).show();
+                                                startActivity(new Intent(RegisterActivity.this, MapsActivity.class));
+                                                finish();
+                                            } else {
+                                                Toast.makeText(RegisterActivity.this, "Erro ao registrar usuário", Toast.LENGTH_SHORT).show();
+                                            }
+                                        }
+                                    });
                         }
                     }
                 });
@@ -99,6 +117,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     protected void storeUser() {
         Map<String, Object> user = new HashMap<>();
+        user.put("name", name.getText().toString());
         user.put("email", email.getText().toString());
         user.put("cpf", CPF.getText().toString());
 
