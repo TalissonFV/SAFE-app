@@ -3,19 +3,24 @@ package com.example.safeapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.Status;
@@ -33,31 +38,37 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.ServerTimestamp;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class EventRegister extends AppCompatActivity {
+public class EventRegister extends AppCompatActivity implements DatePickerDialog.OnDateSetListener, TimePickerDialog.OnTimeSetListener {
 
     private Spinner dropdownEvents;
+    private TextView date;
     private EditText description;
     private Button btnSaveEvent;
-    private ImageView btnPickLocation;
     private ImageView btnReturn;
     private GeoPoint location;
-
+    private @ServerTimestamp Date eventDate;
 
     PlacesClient placesClient;
     FirebaseUser firebaseUser;
     FirebaseAuth firebaseAuth;
+
     String[] itens = new String[]{"Roubo","Furto","Descarte irregular de lixo","Alagamento","Rua fechada","Obras"};
+    int day, month, year, hour, minute;
+    int eventDay, eventMonth, eventYear, eventHour, eventMinute;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +106,14 @@ public class EventRegister extends AppCompatActivity {
         btnSaveEvent = findViewById(R.id.btnSaveEvent);
         description = findViewById(R.id.etDescription);
         btnReturn = findViewById(R.id.btnReturn);
+        date = findViewById(R.id.etDate);
+
+        date.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pickDateTime();
+            }
+        });
 
         btnReturn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -113,6 +132,7 @@ public class EventRegister extends AppCompatActivity {
                 event.put("description", description.getText().toString());
                 event.put("date", Timestamp.now());
                 event.put("user", firebaseUser.getUid());
+                event.put("eventDate", eventDate);
 
                 FirebaseFirestore db = FirebaseFirestore.getInstance();
                 db.collection("events")
@@ -135,5 +155,48 @@ public class EventRegister extends AppCompatActivity {
                         });
             }
         });
+    }
+
+    public void pickDateTime () {
+
+        Calendar cal = Calendar.getInstance();
+
+
+        day = cal.get(Calendar.DAY_OF_MONTH);
+        month = cal.get(Calendar.MONTH);
+        year = cal.get(Calendar.YEAR);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(EventRegister.this, EventRegister.this,
+                year, month, day);
+        datePickerDialog.show();
+
+    }
+
+    @Override
+    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+        eventYear = year;
+        eventMonth = month;
+        eventDay = dayOfMonth;
+
+        Calendar cal = Calendar.getInstance();
+
+        hour = cal.get(Calendar.HOUR_OF_DAY);
+        minute = cal.get(Calendar.MINUTE);
+
+        TimePickerDialog timePickerDialog = new TimePickerDialog(EventRegister.this, EventRegister.this,
+                hour, minute, DateFormat.is24HourFormat(this));
+        timePickerDialog.show();
+    }
+
+    @Override
+    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+        eventHour = hourOfDay;
+        eventMinute = minute;
+
+        eventDate = new GregorianCalendar(eventYear,eventMonth-1,eventDay,eventHour,eventMinute).getTime();
+        System.out.println(eventDate);
+        SimpleDateFormat dateFormatprev = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
+
+        date.setText(dateFormatprev.format(eventDate));
     }
 }
