@@ -21,6 +21,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -303,7 +304,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onInfoWindowClick(Marker marker) {
         AlertDialog.Builder mBuilder = new AlertDialog.Builder(MapsActivity.this);
+        View mView = getLayoutInflater().inflate(R.layout.dialog_event_info, null);
+        final TextView type = mView.findViewById(R.id.tvType);
+        final TextView description = mView.findViewById(R.id.tvDescription);
+        type.setText(marker.getTitle());
+        description.setText(marker.getSnippet());
 
-        Toast.makeText(MapsActivity.this, "Permissão negada!", Toast.LENGTH_SHORT).show();
+        mBuilder.setView(mView);
+        AlertDialog dialog = mBuilder.create();
+        dialog.show();
     }
 }
