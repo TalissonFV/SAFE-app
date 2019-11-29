@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_emergencies"
+            android:icon="@drawable/ic_phone_black_24dp"
+            android:title="Números de emergência"
+            android:drawable="@android:color/transparent"/>
+    </group>
+    <item
+        android:id="@+id/nav_logout"
+        android:icon="@drawable/ic_exit_to_app_black_24dp"
+        android:title="Sair"
+        android:drawable="@android:color/transparent"/>
+</menu>
