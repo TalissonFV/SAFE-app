@@ -9,9 +9,9 @@ public class ClusterMarker implements ClusterItem {
     private String snippet;
     private int iconPicture;
     private String user;
-    private Object tag;
+    private Events tag;
 
-    public ClusterMarker(LatLng position, String title, String snippet, int iconPicture, String user, Object tag) {
+    public ClusterMarker(LatLng position, String title, String snippet, int iconPicture, String user, Events tag) {
         this.position = position;
         this.title = title;
         this.snippet = snippet;
@@ -67,11 +67,11 @@ public class ClusterMarker implements ClusterItem {
         this.user = user;
     }
 
-    public Object getTag() {
+    public Events getTag() {
         return tag;
     }
 
-    public void setTag(Object tag) {
+    public void setTag(Events tag) {
         this.tag = tag;
     }
 }

@@ -20,9 +20,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.354"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:backgroundTint="@color/quantum_grey"/>
 
     <EditText
+        app:backgroundTint="@color/quantum_grey"
         android:id="@+id/etPassword"
         android:layout_width="331dp"
         android:layout_height="49dp"

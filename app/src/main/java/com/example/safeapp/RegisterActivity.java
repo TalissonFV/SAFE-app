@@ -5,8 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
@@ -34,7 +32,6 @@ public class RegisterActivity extends AppCompatActivity {
     EditText name;
     EditText password;
     EditText passwordConfirmation;
-    EditText CPF;
     Button registrar;
     ProgressBar progressBar;
 
@@ -48,7 +45,6 @@ public class RegisterActivity extends AppCompatActivity {
         email = findViewById(R.id.etEmail);
         password = findViewById(R.id.etPassword);
         passwordConfirmation = findViewById(R.id.etConfirmPassword);
-        CPF = findViewById(R.id.etCPF);
         registrar = findViewById(R.id.btnRegisterAccount);
         progressBar = findViewById(R.id.progressBarRegister);
 
@@ -65,22 +61,16 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     protected boolean verifyFields () {
-        boolean passwordConfirm = false, emailConfirm = false, cpfConfirm = false;
+        boolean passwordConfirm = false, emailConfirm = false;
         if (password.getText().toString().equals(passwordConfirmation.getText().toString())) {
             passwordConfirm = true;
         }
         if( !email.getText().toString().isEmpty() && Patterns.EMAIL_ADDRESS.matcher(email.getText().toString()).matches()) {
             emailConfirm = true;
         }
-        if (verifyCPF(CPF.getText().toString())) {
-            cpfConfirm = true;
-        }
-        return passwordConfirm && emailConfirm && cpfConfirm;
+        return passwordConfirm && emailConfirm;
     }
 
-    private boolean verifyCPF (String cpf) {
-        return true;
-    }
 
     protected void registerAccountOnFirebase () {
         progressBar.setVisibility(View.VISIBLE);
@@ -119,7 +109,6 @@ public class RegisterActivity extends AppCompatActivity {
         Map<String, Object> user = new HashMap<>();
         user.put("name", name.getText().toString());
         user.put("email", email.getText().toString());
-        user.put("cpf", CPF.getText().toString());
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users")
