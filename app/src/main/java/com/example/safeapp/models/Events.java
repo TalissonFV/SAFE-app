@@ -1,22 +1,20 @@
 package com.example.safeapp.models;
 
-import androidx.annotation.NonNull;
-
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.ServerTimestamp;
 
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 public class Events {
     private String id;
     private GeoPoint position;
     private @ServerTimestamp Date date;
+    private @ServerTimestamp Date eventDate;
     private String type;
     private String description;
     private String user;
+    private String userName;
+    private int score;
 
     public Events () {
     }
@@ -72,6 +70,30 @@ public class Events {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public Date getEventDate() {
+        return eventDate;
+    }
+
+    public void setEventDate(Date eventDate) {
+        this.eventDate = eventDate;
     }
 }
 

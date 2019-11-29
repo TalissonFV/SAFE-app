@@ -28,7 +28,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.LocationRestriction;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.RectangularBounds;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
@@ -41,6 +43,7 @@ import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.ServerTimestamp;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,6 +90,10 @@ public class EventRegister extends AppCompatActivity implements DatePickerDialog
         final AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
 
+        autocompleteFragment.setLocationRestriction(RectangularBounds.newInstance(
+                new LatLng(-24.388128, -47.054661),
+                new LatLng(-23.788863, -46.261253)));
+
         autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.LAT_LNG, Place.Field.NAME));
 
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
@@ -94,7 +101,6 @@ public class EventRegister extends AppCompatActivity implements DatePickerDialog
             public void onPlaceSelected(@NonNull Place place) {
                 final LatLng latLng = place.getLatLng();
                 location = new GeoPoint(latLng.latitude, latLng.longitude);
-                Toast.makeText(EventRegister.this, latLng.toString(), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -126,6 +132,7 @@ public class EventRegister extends AppCompatActivity implements DatePickerDialog
         btnSaveEvent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                final ArrayList<String> votes = new ArrayList<>();
                 Map<String, Object> event = new HashMap<>();
                 event.put("type", dropdownEvents.getSelectedItem().toString());
                 event.put("position", location);
@@ -133,6 +140,10 @@ public class EventRegister extends AppCompatActivity implements DatePickerDialog
                 event.put("date", Timestamp.now());
                 event.put("user", firebaseUser.getUid());
                 event.put("eventDate", eventDate);
+                event.put("userName", firebaseUser.getDisplayName());
+                event.put("score", 0);
+                event.put("visible", true);
+                event.put("votes", votes);
 
                 FirebaseFirestore db = FirebaseFirestore.getInstance();
                 db.collection("events")

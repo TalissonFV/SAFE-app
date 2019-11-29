@@ -13,15 +13,17 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,13 +40,19 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.annotations.Nullable;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.maps.android.clustering.ClusterManager;
@@ -55,16 +63,20 @@ import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnInfoWindowClickListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback,
+        NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnInfoWindowClickListener{
 
     private GoogleMap mMap;
     private FusedLocationProviderClient client;
-    private ClusterManager mClusterManager;
+    private ClusterManager<ClusterMarker> mClusterManager;
     private MyClusterManagerRenderer mClusterManagerRenderer;
     private ArrayList<ClusterMarker> mClusterMarkers = new ArrayList<>();
     private List<Events> events = new ArrayList<>();
@@ -73,6 +85,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     Button registerEvent;
     TextView userName;
     TextView userEmail;
+
+    NavigationView navigationView;
 
     FirebaseAuth firebaseAuth;
     FirebaseUser firebaseUser;
@@ -94,13 +108,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         drawer = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView = findViewById(R.id.nav_view);
         View headerView = navigationView.getHeaderView(0);
+
         userName = headerView.findViewById(R.id.tvUserName);
         userEmail = headerView.findViewById(R.id.tvUserEmail);
         userName.setText(firebaseUser.getDisplayName());
         userEmail.setText(firebaseUser.getEmail());
         navigationView.setNavigationItemSelectedListener(this);
+
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
@@ -116,6 +132,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onSuccess(Location location) {
                 if (location != null) {
+                    System.out.println(location.getLatitude());
+                    System.out.println(location.getLongitude());
                     LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(currentLocation).title("Usuário").snippet("Localização atual"));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
@@ -143,6 +161,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+
         switch (menuItem.getItemId()) {
             case R.id.nav_logout:
                 FirebaseAuth.getInstance().signOut();
@@ -151,6 +170,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();
+                break;
+            case R.id.nav_emergencies:
+                Intent emergency = new Intent(MapsActivity.this, EmergencyNumbersActivity.class);
+                startActivity(emergency);
+
                 break;
         }
         drawer.closeDrawer(GravityCompat.START);
@@ -230,11 +254,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void run() {
                 FirebaseFirestore db = FirebaseFirestore.getInstance();
                 FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                        .setTimestampsInSnapshotsEnabled(true)
                         .build();
                 db.setFirestoreSettings(settings);
                 final DocumentReference docRef = db.collection("events").document();
-                db.collection("events").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                db.collection("events").whereEqualTo("visible", true).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
@@ -253,7 +276,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void addMapMarkers(){
         if (mMap != null){
             if (mClusterManager == null) {
-                mClusterManager = new ClusterManager<ClusterMarker>(getApplicationContext(), mMap);
+                mClusterManager = new ClusterManager<>(getApplicationContext(), mMap);
+                mClusterManager.setOnClusterItemClickListener(mClusterItemClickListener);
+                mMap.setOnMarkerClickListener(mClusterManager);
             }
 
             if (mClusterManagerRenderer == null) {
@@ -276,11 +301,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     case "Alagamento":
                         avatar = R.drawable.ic_flood;
                         break;
+                    case "Rua fechada":
+                        avatar = R.drawable.ic_closed_street;
+                        break;
+                    case "Descarte irregular de lixo":
+                        avatar = R.drawable.ic_trash;
+                        break;
                     default:
                         avatar = R.drawable.ic_settings;
                         break;
                 }
-                System.out.println(event.getId());
                 try {
                     ClusterMarker newClusterMarker = new ClusterMarker(
                             new LatLng(event.getPosition().getLatitude(),event.getPosition().getLongitude()),
@@ -303,15 +333,135 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onInfoWindowClick(Marker marker) {
-        AlertDialog.Builder mBuilder = new AlertDialog.Builder(MapsActivity.this);
-        View mView = getLayoutInflater().inflate(R.layout.dialog_event_info, null);
-        final TextView type = mView.findViewById(R.id.tvType);
-        final TextView description = mView.findViewById(R.id.tvDescription);
-        type.setText(marker.getTitle());
-        description.setText(marker.getSnippet());
 
-        mBuilder.setView(mView);
-        AlertDialog dialog = mBuilder.create();
-        dialog.show();
     }
+
+    public ClusterManager.OnClusterItemClickListener<ClusterMarker> mClusterItemClickListener = new ClusterManager.OnClusterItemClickListener<ClusterMarker>() {
+
+        @Override
+        public boolean onClusterItemClick(final ClusterMarker item) {
+            final Events data = item.getTag();
+
+            final AlertDialog.Builder mBuilder = new AlertDialog.Builder(MapsActivity.this);
+            View mView = getLayoutInflater().inflate(R.layout.dialog_event_info, null);
+
+            final TextView type = mView.findViewById(R.id.tvType);
+            final TextView description = mView.findViewById(R.id.tvDescription);
+            final TextView date = mView.findViewById(R.id.tvDate);
+            final TextView userName = mView.findViewById(R.id.tvUserName);
+            final TextView score = mView.findViewById(R.id.tvScore);
+            final Button btnDeletar = mView.findViewById(R.id.btnDeleteEvent);
+            final ImageView btnCloseDialog = mView.findViewById(R.id.btnCloseDialog);
+            final ImageView btnUpVote = mView.findViewById(R.id.btnUpVote);
+            final ImageView btnDownVote = mView.findViewById(R.id.btnDownVote);
+
+            type.setText(data.getType());
+            description.setText(data.getDescription());
+            SimpleDateFormat dateFormatprev = new SimpleDateFormat("dd/MM/yyyy - HH:mm");
+            date.setText(dateFormatprev.format(data.getEventDate()));
+            userName.setText(data.getUserName());
+            score.setText("1");
+
+            mBuilder.setView(mView);
+            final Map<String, String> addUserToArrayMap = new HashMap<>();
+            final Map<String, String> votes = new HashMap<>();
+            final AlertDialog dialog = mBuilder.create();
+            final FirebaseFirestore db = FirebaseFirestore.getInstance();
+            final DocumentReference docRef = db.collection("events").document(data.getId());
+            docRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                @Override
+                public void onEvent(@Nullable DocumentSnapshot snapshot,
+                                    @Nullable FirebaseFirestoreException e) {
+                    if (e != null) {
+                        return;
+                    }
+                    if (snapshot != null && snapshot.exists()) {
+                        Map<String, Object> eventSnap = snapshot.getData();
+                        score.setText(eventSnap.get("score").toString());
+                        for (Map.Entry<String, Object> entry : eventSnap.entrySet()) {
+                            if (entry.getKey().equals("votes")) {
+                                List<HashMap> list = (List<HashMap>) entry.getValue();
+                                for (HashMap item : list) {
+                                    if (item.get(firebaseUser.getUid()).equals("up")) {
+                                        btnUpVote.setEnabled(false);
+                                        btnUpVote.setColorFilter(Color.GREEN);
+                                        btnDownVote.setEnabled(false);
+                                        btnDownVote.setColorFilter(Color.GRAY);
+                                    }
+                                    if (item.get(firebaseUser.getUid()).equals("down")) {
+                                        btnUpVote.setEnabled(false);
+                                        btnUpVote.setColorFilter(Color.GRAY);
+                                        btnDownVote.setEnabled(false);
+                                        btnDownVote.setColorFilter(Color.RED);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+
+            btnCloseDialog.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            btnUpVote.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    DocumentReference shardRef = db.collection("events").document(data.getId());
+                    shardRef.update("score", FieldValue.increment(1));
+                    addUserToArrayMap.put(firebaseUser.getUid(), "up");
+                    shardRef.update("votes", FieldValue.arrayUnion(addUserToArrayMap));
+                }
+            });
+
+            btnDownVote.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (score.getText().equals("-9")) {
+                        FirebaseFirestore db = FirebaseFirestore.getInstance();
+                        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                                .build();
+                        db.setFirestoreSettings(settings);
+                        db.collection("events").document(data.getId()).update("visible", false);
+                        mClusterManager.removeItem(item);
+                        mClusterManager.cluster();
+                        dialog.dismiss();
+                    } else {
+                        DocumentReference shardRef = db.collection("events").document(data.getId());
+                        shardRef.update("score", FieldValue.increment(-1));
+                        addUserToArrayMap.put(firebaseUser.getUid(), "down");
+
+                        shardRef.update("votes", FieldValue.arrayUnion(addUserToArrayMap));
+                    }
+                }
+            });
+
+
+            if (firebaseUser.getUid().equals(data.getUser())) {
+                btnDeletar.setVisibility(View.VISIBLE);
+                btnDeletar.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        FirebaseFirestore db = FirebaseFirestore.getInstance();
+                        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                                .build();
+                        db.setFirestoreSettings(settings);
+                        db.collection("events").document(data.getId()).delete();
+                        mClusterManager.removeItem(item);
+                        mClusterManager.cluster();
+                        dialog.dismiss();
+                    }
+                });
+            }
+
+            dialog.show();
+            return true;
+        }
+    };
+
 }

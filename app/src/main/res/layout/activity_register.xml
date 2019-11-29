@@ -19,7 +19,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.515"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:backgroundTint="@color/quantum_grey"/>
 
     <ImageView
         android:id="@+id/imageView4"
@@ -46,7 +47,8 @@
         android:inputType="textEmailAddress"
         app:layout_constraintEnd_toEndOf="@+id/etName"
         app:layout_constraintStart_toStartOf="@+id/etName"
-        app:layout_constraintTop_toBottomOf="@+id/etName" />
+        app:layout_constraintTop_toBottomOf="@+id/etName"
+        app:backgroundTint="@color/quantum_grey"/>
 
     <EditText
         android:id="@+id/etPassword"
@@ -58,7 +60,8 @@
         android:inputType="textPassword"
         app:layout_constraintEnd_toEndOf="@+id/etEmail"
         app:layout_constraintStart_toStartOf="@+id/etEmail"
-        app:layout_constraintTop_toBottomOf="@+id/etEmail" />
+        app:layout_constraintTop_toBottomOf="@+id/etEmail"
+        app:backgroundTint="@color/quantum_grey"/>
 
     <EditText
         android:id="@+id/etConfirmPassword"
@@ -70,37 +73,22 @@
         android:inputType="textPassword"
         app:layout_constraintEnd_toEndOf="@+id/etPassword"
         app:layout_constraintStart_toStartOf="@+id/etPassword"
-        app:layout_constraintTop_toBottomOf="@+id/etPassword" />
-
-    <EditText
-        android:id="@+id/etCPF"
-        android:layout_width="331dp"
-        android:layout_height="49dp"
-        android:layout_marginTop="8dp"
-        android:ems="10"
-        android:hint="CPF"
-        android:inputType="number"
-        app:layout_constraintEnd_toEndOf="@+id/etConfirmPassword"
-        app:layout_constraintStart_toStartOf="@+id/etConfirmPassword"
-        app:layout_constraintTop_toBottomOf="@+id/etConfirmPassword" />
+        app:layout_constraintTop_toBottomOf="@+id/etPassword"
+        app:backgroundTint="@color/quantum_grey"/>
 
     <Button
         android:id="@+id/btnRegisterAccount"
         android:layout_width="213dp"
         android:layout_height="47dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="44dp"
         android:background="#383536"
         android:text="Registrar"
         android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etCPF"
-        app:layout_constraintVertical_bias="0.248" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ProgressBar
         android:id="@+id/progressBarRegister"
@@ -108,15 +96,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="76dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="44dp"
         android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.114"
-        app:layout_constraintStart_toEndOf="@+id/btnRegisterAccount"
-        app:layout_constraintTop_toBottomOf="@+id/etCPF"
-        app:layout_constraintVertical_bias="0.009" />
+        app:layout_constraintHorizontal_bias="0.514"
+        app:layout_constraintStart_toEndOf="@+id/btnRegisterAccount" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
